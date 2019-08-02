@@ -14,12 +14,13 @@ import type { GraphQLSchema } from "graphql";
 
 function fetcher(params: Object): Object {
   return fetch(
-    "https://serve.onegraph.com/dynamic?app_id=c333eb5b-04b2-4709-9246-31e18db397e1",
+    "https://api.staging.aboundcare.com/graphql",
     {
       method: "POST",
       headers: {
         Accept: "application/json",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": "Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ3aWxzb24iLCJleHAiOjE1NzA2MjU1MzIsImlhdCI6MTU2NDU3NzUzMiwiaXNzIjoid2lsc29uIiwianRpIjoiMjIxNDJjNjQtNmEyYi00MmNjLWJmNDctMDA4N2E0ZjM1YjI5IiwibmJmIjoxNTY0NTc3NTMxLCJzdWIiOiJjb2FjaDo1MyIsInR5cCI6ImFjY2VzcyJ9.xM2QMwPP7iJEGCFpj3Xn-grNlTAZ2MoEyucLITj6V1H9ini1RIU09UVGC1ljFs6CcbAVk8U5Yxe3_0OhnNHnzA"
       },
       body: JSON.stringify(params)
     }
@@ -38,43 +39,91 @@ function fetcher(params: Object): Object {
 
 const DEFAULT_QUERY = `# shift-option/alt-click on a query below to jump to it in the explorer
 # option/alt-click on a field in the explorer to select all subfields
-query npmPackage {
-  npm {
-    package(name: "onegraph-apollo-client") {
-      name
-      homepage
-      downloads {
-        lastMonth {
-          count
-        }
+query LoadPatients($includeInactive: Boolean) {
+  coach: currentUser {
+    ... on Coach {
+      id
+      patients(includeInactive: $includeInactive) {
+        ...patientFields
+        __typename
       }
+      __typename
     }
+    __typename
   }
 }
 
-query graphQLPackage {
-  npm {
-    package(name: "graphql") {
-      name
-      homepage
-      downloads {
-        lastMonth {
-          count
-        }
-      }
-    }
-  }
-}
-
-fragment bundlephobiaInfo on BundlephobiaDependencyInfo {
+fragment patientFields on Patient {
+  id
   name
-  size
-  version
-  history {
-    dependencyCount
-    size
-    gzip
+  dateOfBirth
+  height
+  weight
+  timezone
+  isInactive
+  phoneNumber
+  email
+  coachChat {
+    id
+    __typename
   }
+  summary {
+    ...PatientSummaryFields
+    __typename
+  }
+  engagement {
+    ...PatientEngagementFields
+    __typename
+  }
+  __typename
+}
+
+fragment PatientSummaryFields on PatientSummary {
+  dailyBgHigh {
+    ...BloodGlucoseFields
+    __typename
+  }
+  dailyBgLow {
+    ...BloodGlucoseFields
+    __typename
+  }
+  medications
+  targetRangePercentage {
+    high
+    inRange
+    low
+    criticalLow
+    __typename
+  }
+  weeklyBgHigh {
+    ...BloodGlucoseFields
+    __typename
+  }
+  weeklyBgLow {
+    ...BloodGlucoseFields
+    __typename
+  }
+  __typename
+}
+
+fragment PatientEngagementFields on PatientEngagement {
+  minutesSinceLastBgReading
+  minutesSinceLastBurstActivity
+  minutesSinceLastMessage
+  minutesSinceViewedExplorableAssignment
+  score
+  __typename
+}
+
+fragment BloodGlucoseFields on BloodGlucoseBody {
+  sequenceNumber
+  measuredAt
+  mealMarker
+  glucoseConcentration
+  glucoseConcentrationUnits
+  notes
+  targetRangeAssessment
+  __typename
 }`;
 
 type State = {
